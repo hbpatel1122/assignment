@@ -188,6 +188,7 @@ export default function AuthPage() {
                       onChange={e => { setEmail(e.target.value); setEmailErr(''); }}
                       onBlur={() => setEmailErr(validateEmail(email) ?? '')}
                       placeholder="Email address" autoComplete="email" autoFocus
+                      suppressHydrationWarning
                       className={inp(!!emailErr)}
                     />
                   </FieldWrap>
@@ -230,6 +231,7 @@ export default function AuthPage() {
                       onChange={e => { setUsername(e.target.value); setUserErr(''); }}
                       onBlur={() => setUserErr(validateUsername(username) ?? '')}
                       placeholder="Username" autoComplete="username" autoFocus
+                      suppressHydrationWarning
                       className={inp(!!userErr)}
                     />
                   </FieldWrap>
@@ -278,6 +280,7 @@ export default function AuthPage() {
                       onChange={e => { setEmail(e.target.value); setEmailErr(''); }}
                       onBlur={() => setEmailErr(validateEmail(email) ?? '')}
                       placeholder="Email address" autoFocus
+                      suppressHydrationWarning
                       className={inp(!!emailErr)}
                     />
                   </FieldWrap>
@@ -305,6 +308,7 @@ export default function AuthPage() {
                     type="text" inputMode="numeric" value={otp}
                     onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     placeholder="123456" maxLength={6} autoFocus
+                    suppressHydrationWarning
                     className={inp(false) + ' text-center tracking-[0.5em] font-mono text-lg'}
                   />
                   <Btn loading={loading} label="Verify OTP" />
@@ -325,6 +329,7 @@ export default function AuthPage() {
                         onChange={e => { setNewPwd(e.target.value); setNewPwdErr(''); }}
                         onBlur={() => setNewPwdErr(validatePassword(newPwd) ?? '')}
                         placeholder="New password" autoFocus
+                        suppressHydrationWarning
                         className={inp(!!newPwdErr) + ' pr-10'}
                       />
                       <EyeBtn show={showPwd} toggle={() => setShowPwd(p => !p)} />

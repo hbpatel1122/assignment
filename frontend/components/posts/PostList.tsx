@@ -78,11 +78,12 @@ function timeAgo(dateStr: string) {
 function CommentModal({
   post,
   onClose,
+  onCountChange,
 }: {
   post: Post;
   onClose: () => void;
+  onCountChange?: (count: number) => void;
 }) {
-  const [commentCount, setCommentCount] = useState(0);
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -126,7 +127,7 @@ function CommentModal({
           <CommentSection
             postId={post._id}
             autoFocus
-            onCountChange={setCommentCount}
+            onCountChange={onCountChange}
           />
         </div>
       </motion.div>
@@ -142,6 +143,7 @@ function PostModal({
   onClose,
   onDelete,
   onLike,
+  onCommentCountChange,
 }: {
   post: Post;
   isOwner: boolean;
@@ -149,6 +151,7 @@ function PostModal({
   onClose: () => void;
   onDelete: (id: string) => void;
   onLike?: (updatedPost: Post) => void;
+  onCommentCountChange?: (postId: string, count: number) => void;
 }) {
   const router = useRouter();
   const [commentModalOpen, setCommentModalOpen] = useState(false);
@@ -474,6 +477,10 @@ function PostModal({
           <CommentModal
             post={post}
             onClose={() => setCommentModalOpen(false)}
+            onCountChange={(count) => {
+              setCommentCount(count);
+              onCommentCountChange?.(post._id, count);
+            }}
           />
         )}
       </AnimatePresence>
@@ -498,14 +505,17 @@ function PostTile({
   isOwner,
   onClick,
   onLike,
+  commentCountOverride,
 }: {
   post: Post;
   me?: User | null;
   isOwner: boolean;
   onClick: () => void;
   onLike?: (updatedPost: Post) => void;
+  commentCountOverride?: number;
 }) {
   const [commentCount, setCommentCount] = useState(0);
+  const displayCommentCount = commentCountOverride ?? commentCount;
   const [likesOverride, setLikesOverride] = useState<string[] | null>(null);
   const [liking, setLiking] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -602,7 +612,7 @@ function PostTile({
           <svg className="w-5 h-5 fill-white" viewBox="0 0 24 24">
             <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
           </svg>
-          <span className="text-sm font-bold">{commentCount}</span>
+          <span className="text-sm font-bold">{displayCommentCount}</span>
         </div>
       </div>
 
@@ -632,6 +642,7 @@ function PostTile({
 /* ─── Main component ────────────────────────────────────────── */
 const PostList = ({ posts, isOwner, onDelete, me, onLike }: PostListProps) => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [commentCountOverrides, setCommentCountOverrides] = useState<Record<string, number>>({});
   const selectedPost = selectedId ? posts.find((p) => p._id === selectedId) ?? null : null;
 
   const uniquePosts = Array.from(new Map(posts.map((p) => [p._id, p])).values());
@@ -650,6 +661,7 @@ const PostList = ({ posts, isOwner, onDelete, me, onLike }: PostListProps) => {
             isOwner={isOwner}
             onClick={() => setSelectedId(post._id)}
             onLike={onLike}
+            commentCountOverride={commentCountOverrides[post._id]}
           />
         ))}
       </div>
@@ -664,6 +676,9 @@ const PostList = ({ posts, isOwner, onDelete, me, onLike }: PostListProps) => {
             onClose={() => setSelectedId(null)}
             onDelete={(id) => { onDelete(id); setSelectedId(null); }}
             onLike={onLike}
+            onCommentCountChange={(postId, count) =>
+              setCommentCountOverrides((prev) => ({ ...prev, [postId]: count }))
+            }
           />
         )}
       </AnimatePresence>

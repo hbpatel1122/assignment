@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import AppShell from '@/components/layout/AppShell';
 import PostFeedTile from '@/components/posts/PostFeedTile';
 import api from '@/lib/api';
-import { Post } from '@/types';
+import { Post, User } from '@/types';
 import { useStore } from '@/store';
 
 /* ── Delete confirmation modal ───────────────────────────────── */
@@ -101,26 +101,33 @@ export default function PostsPage() {
   const pageSize = 10;
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
-  // Track which authors we follow (seed from store, update on follow clicks)
-  const [followedIds, setFollowedIds] = useState<Set<string>>(() => {
-    const following = (me?.following ?? []) as string[];
-    return new Set(following.map(String));
-  });
-  // Keep followedIds in sync with store user.following
-  useEffect(() => {
-    const following = (me?.following ?? []) as string[];
-    setFollowedIds(new Set(following.map(String)));
-  }, [me?.following]);
+  const extractId = (entry: User | string) =>
+    typeof entry === 'string' ? entry : entry._id;
+
+  const [followedIds, setFollowedIds] = useState<Set<string>>(new Set());
   const [followLoading, setFollowLoading] = useState<string | null>(null);
 
   const updateUser = useStore((s) => s.updateUser);
+
+  // Fetch fresh following list from server on mount so stale localStorage never hides followed users
+  useEffect(() => {
+    api.get('/auth/me').then(({ data }) => {
+      const ids = ((data.user?.following ?? []) as (User | string)[]).map(extractId);
+      setFollowedIds(new Set(ids));
+      updateUser?.({ following: data.user.following });
+    }).catch(() => {
+      // Fallback to store data if request fails
+      setFollowedIds(new Set((me?.following ?? []).map(extractId)));
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleFollow = async (authorId: string, username: string) => {
     setFollowLoading(authorId);
     try {
       await api.post(`/users/${authorId}/follow`);
       setFollowedIds((prev) => new Set([...prev, authorId]));
-      // Update the user store so following is correct after refresh
-      updateUser && updateUser({ following: [...(me?.following ?? []), authorId] });
+      updateUser?.({ following: [...(me?.following ?? []).map(extractId), authorId] });
       toast.success(`Following ${username}`);
     } catch {
       toast.error('Failed to follow');
